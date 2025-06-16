@@ -30,3 +30,5 @@ app.use('/api/users', userRouter);
 app.listen(port, () => {
   console.log(`Pure API server running at http://localhost:${port}`);
 });
+
+module.exports = app
