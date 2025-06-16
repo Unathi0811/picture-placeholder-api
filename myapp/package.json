@@ -1,0 +1,21 @@
+{
+  "name": "myapp",
+  "version": "1.0.0",
+  "description": "avatar-api by me",
+  "license": "ISC",
+  "author": "skyler",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "mongoose": "^8.15.2",
+    "node-cache": "^5.1.2",
+    "sharp": "^0.34.2"
+  }
+}

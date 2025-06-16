@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Avatar Generator</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <div class="landscape-layout">
+      <div class="controls-panel">
+        <h1>Avatar Generator</h1>
+
+        <div class="tabs">
+          <button class="tab active" data-tab="manual">Manual Input</button>
+          <button class="tab" data-tab="database">From Database</button>
+        </div>
+
+        <!-- Manual Input Tab -->
+        <div class="tab-content active" id="manual-tab">
+          <div class="controls">
+            <div class="control-group">
+              <label for="name">First Name</label>
+              <input type="text" id="name" value="Skyler" />
+            </div>
+            <div class="control-group">
+              <label for="surname">Last Name</label>
+              <input type="text" id="surname" value="Smith" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Database Tab -->
+        <div class="tab-content" id="database-tab">
+          <div class="controls">
+            <div class="control-group">
+              <label for="user-select">Select User</label>
+              <select id="user-select">
+                <option value="">Loading users...</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shared controls -->
+        <div class="shared-controls">
+          <div class="control-group">
+            <label for="size"
+              >Image Size: <span id="size-value">200</span>px</label
+            >
+            <input type="range" id="size" min="50" max="500" value="200" />
+          </div>
+          <div class="control-group">
+            <div class="color-input-wrapper">
+              <label for="background">Background Color</label>
+              <div class="color-preview-container">
+                <input type="color" id="background" value="#3498db" />
+                <span
+                  class="color-preview"
+                  id="background-preview"
+                  style="background-color: #3498db"
+                ></span>
+              </div>
+            </div>
+          </div>
+          <div class="control-group">
+            <div class="color-input-wrapper">
+              <label for="color">Text Color</label>
+              <div class="color-preview-container">
+                <input type="color" id="color" value="#ffffff" />
+                <span
+                  class="color-preview"
+                  id="color-preview"
+                  style="background-color: #ffffff"
+                ></span>
+              </div>
+            </div>
+          </div>
+          <div class="checkbox-group control-group">
+            <input type="checkbox" id="rounded" checked />
+            <label for="rounded">Rounded Corners</label>
+          </div>
+          <button id="generate-btn">Generate Avatar</button>
+        </div>
+      </div>
+
+      <!-- Right Panel: The result preview goes here -->
+      <div class="preview-panel">
+        <div class="result">
+          <div class="avatar-img-wrapper" id="avatar-img-wrapper">
+            <img
+              id="avatar-img"
+              src="/avatar?name=Skyler&surname=Smith&rounded=true"
+              alt="Your avatar"
+              width="200"
+              height="200"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // --- Elements ---
+        const tabs = document.querySelectorAll(".tab");
+        const tabContents = document.querySelectorAll(".tab-content");
+        const userSelect = document.getElementById("user-select");
+        const nameInput = document.getElementById("name");
+        const surnameInput = document.getElementById("surname");
+        const sizeInput = document.getElementById("size");
+        const sizeValue = document.getElementById("size-value");
+        const backgroundInput = document.getElementById("background");
+        const colorInput = document.getElementById("color");
+        const roundedInput = document.getElementById("rounded");
+        const generateBtn = document.getElementById("generate-btn");
+        const avatarImg = document.getElementById("avatar-img");
+        const urlDisplay = document.getElementById("url-display");
+        const backgroundPreview = document.getElementById("background-preview");
+        const colorPreview = document.getElementById("color-preview");
+        const avatarImgWrapper = document.getElementById("avatar-img-wrapper");
+
+        // --- Functions ---
+        async function loadUsers() {
+          try {
+            const response = await fetch("/api/users");
+            const users = await response.json();
+
+            userSelect.innerHTML = '<option value="">Select a user</option>';
+            users.forEach((user) => {
+              const option = document.createElement("option");
+              option.value = user._id;
+              option.textContent = `${user.firstName} ${user.lastName}`;
+              userSelect.appendChild(option);
+            });
+          } catch (error) {
+            console.error("Failed to load users:", error);
+            userSelect.innerHTML =
+              '<option value="">Error loading users</option>';
+          }
+        }
+
+        function updatePreviewContainer() {
+          if (roundedInput.checked) {
+            avatarImgWrapper.classList.add("rounded-preview");
+          } else {
+            avatarImgWrapper.classList.remove("rounded-preview");
+          }
+          avatarImgWrapper.style.width = `${sizeInput.value}px`;
+          avatarImgWrapper.style.height = `${sizeInput.value}px`;
+        }
+
+        function generateAvatar() {
+          let params = {
+            size: sizeInput.value,
+            background: backgroundInput.value.slice(1), // Remove #
+            color: colorInput.value.slice(1), // Remove #
+            rounded: roundedInput.checked,
+          };
+
+          // Corrected logic to check which content panel is active
+          if (
+            document.getElementById("database-tab").classList.contains("active") &&
+            userSelect.value
+          ) {
+            params.userId = userSelect.value;
+          } else {
+            params.name = nameInput.value;
+            params.surname = surnameInput.value;
+          }
+
+          const query = new URLSearchParams(params).toString();
+          const url = `/avatar?${query}`;
+
+          avatarImg.src = url;
+          urlDisplay.textContent = `${window.location.origin}${url}`;
+
+          updatePreviewContainer();
+        }
+
+        // --- Event Listeners ---
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+            tabContents.forEach((content) => {
+              content.classList.remove("active");
+              if (content.id === `${tab.dataset.tab}-tab`) {
+                content.classList.add("active");
+              }
+            });
+            generateAvatar();
+          });
+        });
+
+        sizeInput.addEventListener("input", () => {
+          sizeValue.textContent = sizeInput.value;
+          updatePreviewContainer();
+        });
+
+        backgroundInput.addEventListener("input", () => {
+          backgroundPreview.style.backgroundColor = backgroundInput.value;
+        });
+        colorInput.addEventListener("input", () => {
+          colorPreview.style.backgroundColor = colorInput.value;
+        });
+
+        roundedInput.addEventListener("input", updatePreviewContainer);
+        generateBtn.addEventListener("click", generateAvatar);
+        userSelect.addEventListener("change", generateAvatar);
+
+        // --- Initial Setup ---
+        loadUsers();
+        generateAvatar();
+      });
+    </script>
+  </body>
+</html>
